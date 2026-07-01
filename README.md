@@ -5,7 +5,7 @@ every decision the app tells you the **optimal "by the book" play**, with a clea
 explanation and a learning tip. It tracks your accuracy over time and includes a
 strategy quiz and a Hi-Lo card-counting drill.
 
-Built with Next.js + TypeScript + Tailwind. Deploys free on Vercel.
+Built with Next.js + TypeScript + Tailwind. Live at **[vicobj.vercel.app](https://vicobj.vercel.app)**.
 
 ## Features
 
@@ -36,13 +36,6 @@ npm run build        # production build
 npm test             # run the engine unit tests (Vitest)
 npm run lint         # ESLint
 ```
-
-## Deploying to Vercel (free)
-
-1. Push this repo to GitHub.
-2. On [vercel.com](https://vercel.com), **Add New → Project** and import the repo.
-3. Framework preset is auto-detected as **Next.js** — no configuration needed.
-4. Click **Deploy**. That's it.
 
 No environment variables, database, or backend are required — all state lives in the
 browser via `localStorage`.

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { canDouble, canSplit, canSurrender, makeHand } from "@/lib/blackjack/engine";
-import { randomSituation, type Situation } from "@/lib/blackjack/quiz";
+import { randomSituation, weakSituation, type Situation } from "@/lib/blackjack/quiz";
 import type { Action } from "@/lib/blackjack/types";
+import { useActionHotkeys } from "@/lib/useActionHotkeys";
 import { useGame, type DecisionFeedback } from "@/lib/store/useGame";
 import { Controls } from "./Controls";
 import { FeedbackPanel } from "./FeedbackPanel";
@@ -13,7 +14,9 @@ import { StrategyChart } from "./StrategyChart";
 export function QuizMode() {
   const rules = useGame((s) => s.settings.rules);
   const grade = useGame((s) => s.grade);
+  const mastery = useGame((s) => s.stats.mastery);
 
+  const [focus, setFocus] = useState(false);
   const [situation, setSituation] = useState<Situation>(() => randomSituation());
   const [feedback, setFeedback] = useState<DecisionFeedback | null>(null);
   const [session, setSession] = useState({ correct: 0, total: 0, streak: 0 });
@@ -41,8 +44,20 @@ export function QuizMode() {
 
   const next = () => {
     setFeedback(null);
-    setSituation(randomSituation());
+    setSituation(focus ? weakSituation(mastery) : randomSituation());
   };
+
+  // Keyboard: H/S/D/P/R to answer, Enter/Space for next question.
+  const hotkeyHandlers = useMemo(() => {
+    if (feedback) return {};
+    const h: Partial<Record<Action, () => void>> = {};
+    (Object.keys(avail) as Action[]).forEach((a) => {
+      if (avail[a]) h[a] = () => onAnswer(a);
+    });
+    return h;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [feedback, situation]);
+  useActionHotkeys(hotkeyHandlers, { onConfirm: feedback ? next : undefined });
 
   const pct = session.total ? Math.round((session.correct / session.total) * 100) : 0;
 
@@ -60,13 +75,32 @@ export function QuizMode() {
           <span className="text-cream/50">Streak</span>{" "}
           <span className="font-bold text-gold-soft">{session.streak}🔥</span>
         </div>
-        <button
-          onClick={() => setShowChart((v) => !v)}
-          className="glass rounded-xl px-3 py-1.5 text-cream/80 hover:text-gold-soft"
-        >
-          {showChart ? "Hide chart" : "Show chart"}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setFocus((v) => !v)}
+            aria-pressed={focus}
+            title="Prioritise the hands you get wrong most"
+            className={`rounded-xl px-3 py-1.5 font-semibold transition-colors ${
+              focus
+                ? "bg-gold text-ink"
+                : "glass text-cream/80 hover:text-gold-soft"
+            }`}
+          >
+            🎯 Focus
+          </button>
+          <button
+            onClick={() => setShowChart((v) => !v)}
+            className="glass rounded-xl px-3 py-1.5 text-cream/80 hover:text-gold-soft"
+          >
+            {showChart ? "Hide chart" : "Show chart"}
+          </button>
+        </div>
       </div>
+      {focus && (
+        <div className="-mt-2 rounded-lg bg-gold/10 px-3 py-1.5 text-xs text-gold-soft">
+          Focus mode on — you&apos;ll see more of the situations you miss most.
+        </div>
+      )}
 
       <div className="felt-inset flex flex-col items-center gap-5 rounded-[2rem] px-4 py-8">
         <div className="flex flex-col items-center gap-1">

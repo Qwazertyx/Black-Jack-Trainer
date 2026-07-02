@@ -12,8 +12,11 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { useRef, useState } from "react";
 import { accuracy } from "@/lib/store/stats";
 import { useGame } from "@/lib/store/useGame";
+import { Achievements } from "./Achievements";
+import { StrategyChart } from "./StrategyChart";
 
 function StatCard({
   label,
@@ -34,7 +37,36 @@ function StatCard({
 
 export function StatsDashboard() {
   const stats = useGame((s) => s.stats);
+  const rules = useGame((s) => s.settings.rules);
   const resetStats = useGame((s) => s.resetStats);
+  const exportData = useGame((s) => s.exportData);
+  const importData = useGame((s) => s.importData);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [importMsg, setImportMsg] = useState<string | null>(null);
+
+  const onExport = () => {
+    const blob = new Blob([JSON.stringify(exportData(), null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `vico-blackjack-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const onImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // allow re-importing the same file
+    if (!file) return;
+    try {
+      const parsed = JSON.parse(await file.text());
+      setImportMsg(importData(parsed) ? "✓ Backup restored." : "✗ Unrecognised backup file.");
+    } catch {
+      setImportMsg("✗ Could not read that file.");
+    }
+  };
 
   const acc = accuracy(stats);
 
@@ -83,6 +115,8 @@ export function StatsDashboard() {
           accent={stats.netUnits >= 0 ? "text-emerald-400" : "text-rose-400"}
         />
       </div>
+
+      <Achievements stats={stats} />
 
       {stats.decisions === 0 ? (
         <div className="glass rounded-2xl p-8 text-center text-cream/60">
@@ -207,15 +241,50 @@ export function StatsDashboard() {
               </div>
             </div>
           )}
+
+          {/* Personal mastery heat-map */}
+          <div className="glass rounded-2xl p-4">
+            <h3 className="mb-1 text-sm font-bold text-gold-soft">Your mastery map</h3>
+            <p className="mb-3 text-xs text-cream/50">
+              Every cell you&apos;ve played, coloured by how often you get it right.
+              Green is mastered, red needs work — jump to Quiz&apos;s Focus mode to drill
+              the weak ones.
+            </p>
+            <StrategyChart rules={rules} mode="mastery" mastery={stats.mastery} />
+          </div>
         </>
       )}
 
-      <button
-        onClick={resetStats}
-        className="mx-auto rounded-xl bg-black/30 px-5 py-2 text-sm text-cream/70 gold-ring hover:text-rose-300"
-      >
-        Reset all stats
-      </button>
+      <div className="flex flex-col items-center gap-2">
+        <div className="flex flex-wrap justify-center gap-2">
+          <button
+            onClick={onExport}
+            className="rounded-xl bg-black/30 px-5 py-2 text-sm text-cream/80 gold-ring hover:text-gold-soft"
+          >
+            ⬇ Export backup
+          </button>
+          <button
+            onClick={() => fileRef.current?.click()}
+            className="rounded-xl bg-black/30 px-5 py-2 text-sm text-cream/80 gold-ring hover:text-gold-soft"
+          >
+            ⬆ Import backup
+          </button>
+          <button
+            onClick={resetStats}
+            className="rounded-xl bg-black/30 px-5 py-2 text-sm text-cream/70 gold-ring hover:text-rose-300"
+          >
+            Reset all stats
+          </button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="application/json,.json"
+            onChange={onImportFile}
+            className="hidden"
+          />
+        </div>
+        {importMsg && <p className="text-xs text-cream/70">{importMsg}</p>}
+      </div>
     </div>
   );
 }

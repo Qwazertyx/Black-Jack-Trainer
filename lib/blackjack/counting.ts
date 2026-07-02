@@ -60,3 +60,26 @@ export const INDEX_PLAYS: IndexPlay[] = [
   { hand: "13", dealer: "3", index: -2, deviation: "Hit", basic: "Stand" },
   { hand: "Insurance", dealer: "A", index: 3, deviation: "Take", basic: "Decline" },
 ];
+
+/** Whether, at `trueCount`, the correct move is the deviation (vs the basic play). */
+export function deviationApplies(play: IndexPlay, trueCount: number): boolean {
+  return play.index >= 0 ? trueCount >= play.index : trueCount <= play.index;
+}
+
+export interface DeviationQuestion {
+  play: IndexPlay;
+  trueCount: number;
+  /** The correct label (the deviation text or the basic-play text). */
+  answer: string;
+}
+
+/** Build a random deviation question: a play plus a true count near its index. */
+export function randomDeviationQuestion(
+  rng: () => number = Math.random,
+): DeviationQuestion {
+  const play = INDEX_PLAYS[Math.floor(rng() * INDEX_PLAYS.length)];
+  // Sample a true count spread around the index so both answers come up.
+  const tc = play.index + Math.floor(rng() * 7) - 3; // index-3 .. index+3
+  const answer = deviationApplies(play, tc) ? play.deviation : play.basic;
+  return { play, trueCount: tc, answer };
+}

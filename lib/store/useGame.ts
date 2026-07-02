@@ -13,15 +13,21 @@ import {
   resolveHand,
   type Shoe,
 } from "../blackjack/engine";
-import {
-  getAdvice,
-  upcardValue,
-  type StrategyAdvice,
-} from "../blackjack/strategy";
+import { getAdvice, type StrategyAdvice } from "../blackjack/strategy";
+import { describeSituation } from "../blackjack/situationKey";
 import { DEFAULT_RULES, type Action, type Card, type Hand, type Rules } from "../blackjack/types";
 import { emptyStats, recordDecision, recordOutcome, type Stats } from "./stats";
 
+export { describeSituation };
+
 export type Phase = "idle" | "player" | "dealer" | "over";
+
+/** The slice of state written to localStorage; also the export/import shape. */
+export interface PersistedData {
+  settings: Settings;
+  stats: Stats;
+  bankroll: number;
+}
 
 export interface Settings {
   rules: Rules;
@@ -66,6 +72,10 @@ interface GameState {
   nextRound: () => void;
   resetStats: () => void;
   resetBankroll: () => void;
+  /** Snapshot of the persisted data (settings, stats, bankroll) for backup. */
+  exportData: () => PersistedData;
+  /** Restore persisted data from a backup. Returns false if the payload is invalid. */
+  importData: (data: unknown) => boolean;
   /** Grade a standalone decision (used by quiz mode) and record it in stats. */
   grade: (cards: Card[], dealerUp: Card, action: Action) => DecisionFeedback;
 
@@ -363,6 +373,46 @@ export const useGame = create<GameState>()(
       resetStats: () => set({ stats: emptyStats() }),
       resetBankroll: () => set({ bankroll: START_BANKROLL }),
 
+      exportData: () => {
+        const s = get();
+        return { settings: s.settings, stats: s.stats, bankroll: s.bankroll };
+      },
+
+      importData: (data: unknown) => {
+        if (!data || typeof data !== "object") return false;
+        const d = data as Partial<PersistedData>;
+        // Require at least a recognisable stats or settings block.
+        if (!d.stats && !d.settings) return false;
+        const patch: Partial<GameState> = {};
+        if (d.stats && typeof d.stats === "object") {
+          // Merge onto empty stats so older/newer backups keep every field.
+          patch.stats = { ...emptyStats(), ...d.stats };
+        }
+        if (d.settings && typeof d.settings === "object") {
+          patch.settings = {
+            ...defaultSettings,
+            ...d.settings,
+            rules: { ...DEFAULT_RULES, ...d.settings.rules },
+          };
+        }
+        if (typeof d.bankroll === "number" && isFinite(d.bankroll)) {
+          patch.bankroll = d.bankroll;
+        }
+        // Rebuild transient round state so the table is consistent.
+        const rules = patch.settings?.rules ?? get().settings.rules;
+        set({
+          ...patch,
+          shoe: freshShoe(rules),
+          runningCount: 0,
+          phase: "idle",
+          hands: [],
+          dealer: [],
+          feedback: null,
+          message: "Backup restored. Deal a new hand.",
+        });
+        return true;
+      },
+
       grade: (cards, dealerUp, action) => {
         const rules = get().settings.rules;
         const hand = makeHand(cards, get().bet);
@@ -382,7 +432,22 @@ export const useGame = create<GameState>()(
     }),
     {
       name: "vico-blackjack",
+      version: 1,
       partialize: (s) => ({ settings: s.settings, stats: s.stats, bankroll: s.bankroll }),
+      // Backfill fields added after a user's data was first persisted.
+      merge: (persisted, current) => {
+        const p = (persisted ?? {}) as Partial<PersistedData>;
+        return {
+          ...current,
+          ...p,
+          settings: {
+            ...current.settings,
+            ...p.settings,
+            rules: { ...current.settings.rules, ...p.settings?.rules },
+          },
+          stats: { ...emptyStats(), ...p.stats },
+        };
+      },
     },
   ),
 );
@@ -394,18 +459,4 @@ function summarise(net: number): string {
   if (net > 0) return `You won ${net} units this round. Nicely played.`;
   if (net < 0) return `You lost ${Math.abs(net)} units this round.`;
   return "Push — your bet is returned.";
-}
-
-/** Human-readable key for a situation, used to track most-missed hands. */
-export function describeSituation(cards: Card[], dealerUp: Card): string {
-  const up = upcardValue(dealerUp);
-  const upLabel = up === 11 ? "A" : String(up);
-  const pair = pairValue(cards);
-  if (pair !== null && cards.length === 2) {
-    const label = pair === 11 ? "A,A" : pair === 10 ? "10,10" : `${pair},${pair}`;
-    return `${label} vs ${upLabel}`;
-  }
-  const { total, soft } = handValue(cards);
-  if (soft && total <= 20) return `soft ${total} vs ${upLabel}`;
-  return `hard ${total} vs ${upLabel}`;
 }

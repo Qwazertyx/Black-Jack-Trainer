@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useGame } from "@/lib/store/useGame";
 import {
   availableActions,
@@ -7,6 +8,8 @@ import {
   trueCountValue,
 } from "@/lib/store/selectors";
 import { accuracy } from "@/lib/store/stats";
+import type { Action } from "@/lib/blackjack/types";
+import { useActionHotkeys } from "@/lib/useActionHotkeys";
 import { Controls } from "./Controls";
 import { CountHud } from "./CountHud";
 import { DealerHand, HandView } from "./HandView";
@@ -22,6 +25,25 @@ export function PlayTable() {
   const acc = accuracy(s.stats);
 
   const canDeal = s.bet > 0 && s.bet <= s.bankroll;
+
+  // Keyboard shortcuts: H/S/D/P/R to act, Enter/Space to deal or advance.
+  const { phase, act, deal, nextRound } = s;
+  const hotkeyHandlers = useMemo(() => {
+    if (phase !== "player") return {};
+    const h: Partial<Record<Action, () => void>> = {};
+    (Object.keys(avail) as Action[]).forEach((a) => {
+      if (avail[a]) h[a] = () => act(a);
+    });
+    return h;
+  }, [phase, avail, act]);
+
+  const onConfirm = useMemo(() => {
+    if (phase === "over") return nextRound;
+    if (phase === "idle") return canDeal ? deal : undefined;
+    return undefined;
+  }, [phase, canDeal, deal, nextRound]);
+
+  useActionHotkeys(hotkeyHandlers, { onConfirm });
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-4">

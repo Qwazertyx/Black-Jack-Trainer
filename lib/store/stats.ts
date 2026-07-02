@@ -28,6 +28,8 @@ export interface Stats {
   history: { correct: boolean }[];
   /** Count of how often each situation was played wrong. */
   missed: Record<string, number>;
+  /** Per-situation mastery: how often each cell was seen and played correctly. */
+  mastery: Record<string, { seen: number; correct: number }>;
 }
 
 export function emptyStats(): Stats {
@@ -51,6 +53,7 @@ export function emptyStats(): Stats {
     bestStreak: 0,
     history: [],
     missed: {},
+    mastery: {},
   };
 }
 
@@ -68,9 +71,14 @@ export function recordDecision(
     byCategory: { ...stats.byCategory, [category]: { ...stats.byCategory[category] } },
     history: [...stats.history, { correct }].slice(-HISTORY_CAP),
     missed: { ...stats.missed },
+    mastery: { ...stats.mastery },
   };
   next.decisions += 1;
   next.byCategory[category].total += 1;
+  if (missKey) {
+    const m = next.mastery[missKey] ?? { seen: 0, correct: 0 };
+    next.mastery[missKey] = { seen: m.seen + 1, correct: m.correct + (correct ? 1 : 0) };
+  }
   if (correct) {
     next.correct += 1;
     next.byCategory[category].correct += 1;

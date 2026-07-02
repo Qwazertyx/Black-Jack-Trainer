@@ -2,7 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { buildShoe, shuffle } from "@/lib/blackjack/cards";
-import { INDEX_PLAYS, runningCountOf } from "@/lib/blackjack/counting";
+import {
+  INDEX_PLAYS,
+  randomDeviationQuestion,
+  runningCountOf,
+  type DeviationQuestion,
+} from "@/lib/blackjack/counting";
 import type { Card } from "@/lib/blackjack/types";
 import { PlayingCard } from "./PlayingCard";
 
@@ -22,6 +27,27 @@ export function CountingMode() {
   const [guess, setGuess] = useState("");
   const [count, setCount] = useState(26);
   const [speedMs, setSpeedMs] = useState(800);
+
+  // Deviation drill state.
+  const [dev, setDev] = useState<{ q: DeviationQuestion; options: string[] } | null>(null);
+  const [devPick, setDevPick] = useState<string | null>(null);
+  const [devScore, setDevScore] = useState({ correct: 0, total: 0 });
+
+  const newDeviation = () => {
+    const q = randomDeviationQuestion();
+    const options = shuffle([q.play.deviation, q.play.basic]);
+    setDev({ q, options });
+    setDevPick(null);
+  };
+
+  const answerDeviation = (label: string) => {
+    if (!dev || devPick) return;
+    setDevPick(label);
+    setDevScore((s) => ({
+      correct: s.correct + (label === dev.q.answer ? 1 : 0),
+      total: s.total + 1,
+    }));
+  };
 
   const shown = idx + 1;
   const actual = runningCountOf(deck.slice(0, Math.max(shown, 0)));
@@ -147,6 +173,91 @@ export function CountingMode() {
           </p>
         </div>
       )}
+
+      {/* Deviation drill */}
+      <div className="glass rounded-2xl p-4">
+        <div className="mb-2 flex items-center justify-between">
+          <h3 className="text-lg font-bold text-gold-soft">Deviation drill</h3>
+          {devScore.total > 0 && (
+            <span className="text-sm text-cream/60">
+              {devScore.correct}/{devScore.total} correct
+            </span>
+          )}
+        </div>
+        <p className="mb-3 text-xs text-cream/60">
+          Given the true count, decide whether to make the index-play deviation or stick
+          with basic strategy.
+        </p>
+
+        {!dev ? (
+          <button
+            onClick={newDeviation}
+            className="rounded-xl bg-gradient-to-b from-gold-soft to-gold px-6 py-2.5 font-extrabold uppercase tracking-wide text-ink shadow-[0_6px_20px_rgba(212,175,55,0.35)] transition-transform hover:-translate-y-0.5"
+          >
+            Start drill
+          </button>
+        ) : (
+          <div className="flex flex-col gap-3">
+            <div className="felt-inset flex flex-wrap items-center justify-center gap-x-6 gap-y-2 rounded-2xl px-4 py-4 text-center">
+              <div>
+                <div className="text-xs uppercase tracking-wide text-cream/50">Hand</div>
+                <div className="text-lg font-bold text-cream">
+                  {dev.q.play.hand === "Insurance"
+                    ? "Insurance?"
+                    : `${dev.q.play.hand} vs ${dev.q.play.dealer}`}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs uppercase tracking-wide text-cream/50">True count</div>
+                <div className="text-lg font-bold text-gold-soft">
+                  {dev.q.trueCount > 0 ? `+${dev.q.trueCount}` : dev.q.trueCount}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap justify-center gap-2">
+              {dev.options.map((label) => {
+                const answered = devPick !== null;
+                const isCorrect = label === dev.q.answer;
+                const tone = !answered
+                  ? "bg-felt-700 text-cream gold-ring hover:bg-felt-600"
+                  : isCorrect
+                    ? "bg-emerald-600 text-white"
+                    : label === devPick
+                      ? "bg-rose-600 text-white"
+                      : "bg-felt-800 text-cream/40";
+                return (
+                  <button
+                    key={label}
+                    onClick={() => answerDeviation(label)}
+                    disabled={answered}
+                    className={`min-w-[110px] rounded-xl px-4 py-3 text-sm font-bold uppercase tracking-wide transition-colors ${tone}`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {devPick && (
+              <div className="flex flex-col items-center gap-2 text-center">
+                <p className="text-sm text-cream/80">
+                  {devPick === dev.q.answer ? "✅ Correct — " : "❌ Not quite — "}
+                  the play is <b className="text-gold-soft">{dev.q.answer}</b>. This index
+                  is {dev.q.play.index >= 0 ? `≥ +${dev.q.play.index}` : `≤ ${dev.q.play.index}`}{" "}
+                  (deviate {dev.q.play.deviation}, otherwise {dev.q.play.basic}).
+                </p>
+                <button
+                  onClick={newDeviation}
+                  className="rounded-xl bg-gold px-6 py-2 font-bold text-ink"
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Index plays reference */}
       <div className="glass rounded-2xl p-4">

@@ -6,6 +6,8 @@ import { QuizMode } from "@/components/QuizMode";
 import { CountingMode } from "@/components/CountingMode";
 import { StatsDashboard } from "@/components/StatsDashboard";
 import { SettingsPanel } from "@/components/SettingsPanel";
+import { DisclaimerModal } from "@/components/DisclaimerModal";
+import { SiteFooter } from "@/components/SiteFooter";
 
 type Mode = "play" | "quiz" | "count" | "stats" | "settings";
 
@@ -28,6 +30,7 @@ export default function Home() {
 
   return (
     <div className="flex min-h-screen flex-col">
+      <DisclaimerModal />
       {/* Header */}
       <header className="sticky top-0 z-20 border-b border-gold/15 bg-felt-950/70 backdrop-blur-md">
         <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-3">
@@ -82,9 +85,7 @@ export default function Home() {
         )}
       </main>
 
-      <footer className="border-t border-gold/10 py-4 text-center text-xs text-cream/40">
-        Vico Blackjack · A training tool for perfect play. No real money.
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

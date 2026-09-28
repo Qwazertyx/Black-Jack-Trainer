@@ -11,12 +11,13 @@ import { SiteFooter } from "@/components/SiteFooter";
 
 type Mode = "play" | "quiz" | "count" | "stats" | "settings";
 
-const TABS: { id: Mode; label: string; icon: string }[] = [
-  { id: "play", label: "Play", icon: "🃏" },
-  { id: "quiz", label: "Quiz", icon: "⚡" },
-  { id: "count", label: "Counting", icon: "🧮" },
-  { id: "stats", label: "Stats", icon: "📊" },
-  { id: "settings", label: "Settings", icon: "⚙️" },
+/** Bitmap text labels only. Emoji icons were the loudest AI tell in the old header. */
+const TABS: { id: Mode; label: string }[] = [
+  { id: "play", label: "Play" },
+  { id: "quiz", label: "Quiz" },
+  { id: "count", label: "Count" },
+  { id: "stats", label: "Stats" },
+  { id: "settings", label: "Config" },
 ];
 
 export default function Home() {
@@ -28,51 +29,60 @@ export default function Home() {
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setMounted(true), []);
 
+  /*
+    Play is sized to the viewport so the table and the action buttons are always
+    on the first screen, with no scrolling. The other modes are documents: they
+    scroll normally.
+  */
+  const isPlay = mode === "play";
+
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex h-[100dvh] flex-col">
       <DisclaimerModal />
-      {/* Header */}
-      <header className="sticky top-0 z-20 border-b border-gold/15 bg-felt-950/70 backdrop-blur-md">
-        <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-3">
-          <div className="flex items-center gap-2">
-            <span className="grid h-9 w-9 place-items-center rounded-lg bg-gradient-to-br from-gold-soft to-gold-dim text-lg font-black text-ink shadow">
-              ♠
-            </span>
-            <div>
-              <h1 className="text-lg font-black leading-none tracking-tight text-cream">
-                Vico <span className="text-gold-soft">Blackjack</span>
-              </h1>
-              <p className="text-[11px] text-cream/50">
-                Learn perfect basic strategy, by the book.
-              </p>
-            </div>
+
+      <header className="shrink-0 border-b-2 border-felt-600 bg-felt-900">
+        <div className="mx-auto flex w-full max-w-4xl flex-col px-4 pt-3">
+          <div className="flex items-baseline justify-between gap-3">
+            <h1 className="font-display text-3xl leading-none sm:text-4xl">
+              Vico <span className="text-carmine">Blackjack</span>
+            </h1>
+            {/* The tagline is the first thing to go when height is scarce. */}
+            <p className="label hidden text-gold-dim sm:block">
+              Basic strategy, by the book
+            </p>
           </div>
 
-          {/* Tabs */}
-          <nav className="flex gap-1 overflow-x-auto">
-            {TABS.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => setMode(t.id)}
-                className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
-                  mode === t.id
-                    ? "bg-gold text-ink"
-                    : "text-cream/70 hover:bg-white/5 hover:text-cream"
-                }`}
-              >
-                <span>{t.icon}</span>
-                {t.label}
-              </button>
-            ))}
+          <nav className="-mx-1 mt-2 flex overflow-x-auto" aria-label="Modes">
+            {TABS.map((t) => {
+              const active = mode === t.id;
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => setMode(t.id)}
+                  aria-current={active ? "page" : undefined}
+                  // Emphasis is inversion: the active tab is paper on ink.
+                  className={`font-bitmap relative top-[2px] whitespace-nowrap border-2 border-b-0 px-3 py-2 text-[11px] uppercase tracking-[0.06em] ${
+                    active
+                      ? "border-felt-600 bg-gold text-ink"
+                      : "border-transparent text-gold-dim hover:text-cream"
+                  }`}
+                >
+                  {t.label}
+                </button>
+              );
+            })}
           </nav>
         </div>
       </header>
 
-      {/* Content */}
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6">
+      <main
+        className={`mx-auto w-full max-w-4xl flex-1 px-4 py-3 ${
+          isPlay ? "flex min-h-0 flex-col" : "overflow-y-auto"
+        }`}
+      >
         {!mounted ? (
-          <div className="flex h-64 items-center justify-center text-cream/40">
-            Shuffling the shoe…
+          <div className="label flex flex-1 items-center justify-center text-gold-dim">
+            Shuffling the shoe
           </div>
         ) : (
           <>
@@ -85,7 +95,8 @@ export default function Home() {
         )}
       </main>
 
-      <SiteFooter />
+      {/* The responsible-gambling notice stays on every screen, one line on Play. */}
+      <SiteFooter compact={isPlay} />
     </div>
   );
 }

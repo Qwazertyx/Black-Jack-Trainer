@@ -25,10 +25,18 @@ const ORDER: Action[] = ["hit", "stand", "double", "split", "surrender"];
 
 export function Controls({ available, onAct, hint, disabled, showKeys = true }: Props) {
   return (
-    <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+    <div className="flex flex-wrap items-center justify-center gap-2">
       {ORDER.map((action) => {
         const enabled = available[action] && !disabled;
         const isHint = hint === action;
+
+        // Emphasis is inversion: the book play is paper on ink, not a glow.
+        const skin = !enabled
+          ? "cursor-not-allowed border-felt-700 bg-felt-900 text-gold-dim"
+          : isHint
+            ? "cursor-pointer border-gold bg-gold text-ink shadow-[4px_4px_0_var(--color-felt-950)] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none"
+            : "cursor-pointer border-felt-600 bg-felt-800 text-cream shadow-[4px_4px_0_var(--color-felt-950)] hover:bg-felt-700 active:translate-x-[4px] active:translate-y-[4px] active:shadow-none";
+
         return (
           <button
             key={action}
@@ -36,28 +44,21 @@ export function Controls({ available, onAct, hint, disabled, showKeys = true }: 
             disabled={!enabled}
             aria-label={`${ACTION_LABEL[action]} (shortcut ${ACTION_KEYS[action]})`}
             aria-keyshortcuts={ACTION_KEYS[action]}
-            className={`relative min-w-[92px] rounded-xl px-4 py-3 text-sm font-bold uppercase tracking-wide transition-all
-              ${
-                enabled
-                  ? "cursor-pointer bg-gradient-to-b from-felt-600 to-felt-800 text-cream gold-ring hover:from-felt-700 hover:-translate-y-0.5 active:translate-y-0"
-                  : "cursor-not-allowed bg-black/20 text-cream/25"
-              }
-              ${isHint && enabled ? "ring-2 ring-gold shadow-[0_0_18px_rgba(212,175,55,0.5)]" : ""}
-            `}
+            // No transition. The press is a one-frame snap, like a mechanical key.
+            className={`font-bitmap flex min-h-11 min-w-[88px] items-center justify-center gap-2 border-2 px-3 py-3 text-[11px] uppercase tracking-[0.06em] ${skin}`}
           >
             {ACTION_LABEL[action]}
             {showKeys && (
               <span
-                className={`ml-1.5 rounded px-1 py-0.5 text-[10px] font-bold ${
-                  enabled ? "bg-black/25 text-cream/60" : "bg-black/20 text-cream/20"
+                className={`px-1 py-px text-[9px] leading-none ${
+                  !enabled
+                    ? "bg-felt-700 text-gold-dim"
+                    : isHint
+                      ? "bg-ink text-gold"
+                      : "bg-gold-dim text-ink"
                 }`}
               >
                 {ACTION_KEYS[action]}
-              </span>
-            )}
-            {isHint && enabled && (
-              <span className="absolute -top-2 -right-2 rounded-full bg-gold px-1.5 py-0.5 text-[10px] font-extrabold text-ink">
-                BEST
               </span>
             )}
           </button>

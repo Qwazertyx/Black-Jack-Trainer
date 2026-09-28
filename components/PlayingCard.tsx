@@ -1,16 +1,60 @@
 "use client";
 
-import { motion } from "framer-motion";
 import type { Card, Suit } from "@/lib/blackjack/types";
 
-const SUIT_SYMBOL: Record<Suit, string> = {
-  S: "♠",
-  H: "♥",
-  D: "♦",
-  C: "♣",
+/**
+ * Suit pips drawn on a 7x7 grid, the way a low-res tileset would. Rendered as
+ * SVG with `shape-rendering: crispEdges` so every pixel stays square at any size.
+ */
+const PIP_BITMAP: Record<Suit, string[]> = {
+  S: ["...#...", "..###..", ".#####.", "#######", "#######", "...#...", "..###.."],
+  H: [".##.##.", "#######", "#######", "#######", ".#####.", "..###..", "...#..."],
+  D: ["...#...", "..###..", ".#####.", "#######", ".#####.", "..###..", "...#..."],
+  C: ["..###..", ".#####.", "##.#.##", "#######", ".#####.", "...#...", "..###.."],
 };
 
 const RED_SUITS: Suit[] = ["H", "D"];
+
+/** Ink on paper, and the darker carmine that reads at 4.5:1 on cream. */
+const PIP_INK = "#14101c";
+const PIP_CARMINE = "#9e2437";
+
+/** Collapse each bitmap row into horizontal runs so we emit a handful of rects, not 49. */
+function pipRects(suit: Suit) {
+  const rects: { x: number; y: number; w: number }[] = [];
+  PIP_BITMAP[suit].forEach((row, y) => {
+    let x = 0;
+    while (x < row.length) {
+      if (row[x] === "#") {
+        let w = 1;
+        while (row[x + w] === "#") w++;
+        rects.push({ x, y, w });
+        x += w;
+      } else {
+        x++;
+      }
+    }
+  });
+  return rects;
+}
+
+function Pip({ suit, size, color }: { suit: Suit; size: string; color: string }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 7 7"
+      shapeRendering="crispEdges"
+      fill={color}
+      aria-hidden="true"
+      className="pixelated block shrink-0"
+    >
+      {pipRects(suit).map((r, i) => (
+        <rect key={i} x={r.x} y={r.y} width={r.w} height={1} />
+      ))}
+    </svg>
+  );
+}
 
 interface Props {
   card?: Card;
@@ -21,50 +65,61 @@ interface Props {
 }
 
 export function PlayingCard({ card, faceDown, index = 0, size = "md" }: Props) {
-  const dims =
-    size === "sm"
-      ? "w-11 h-16 text-sm rounded-md"
-      : "w-16 h-24 sm:w-[4.5rem] sm:h-[6.5rem] text-lg rounded-lg";
-
   const isRed = card ? RED_SUITS.includes(card.suit) : false;
-  const symbol = card ? SUIT_SYMBOL[card.suit] : "";
+  const color = isRed ? PIP_CARMINE : PIP_INK;
+
+  // `sm` is a fixed two-thirds card, used in the counting drill and quiz strips.
+  const scale = size === "sm" ? 0.68 : 1;
+  const geometry = {
+    width: `calc(var(--card-w) * ${scale})`,
+    height: `calc(var(--card-h) * ${scale})`,
+    padding: `calc(var(--card-w) * ${0.07 * scale})`,
+    animationDelay: `${index * 70}ms`,
+  } as const;
+
+  const rankStyle = {
+    fontSize: `max(9px, calc(var(--card-w) * ${0.23 * scale}))`,
+    lineHeight: 1,
+  } as const;
+
+  const cornerPip = `calc(var(--card-w) * ${0.15 * scale})`;
+  const centerPip = `calc(var(--card-w) * ${0.38 * scale})`;
+
+  if (faceDown || !card) {
+    return (
+      <div
+        style={geometry}
+        className="deal-step playing-card-shadow flex shrink-0 select-none items-center justify-center border-2 border-felt-950 bg-felt-700 shadow-[inset_0_0_0_3px_var(--color-felt-900),inset_0_0_0_5px_var(--color-felt-600),3px_3px_0_rgba(15,12,22,0.55)]"
+        aria-label="Face-down card"
+      >
+        <Pip suit="S" size={centerPip} color="#443a5e" />
+      </div>
+    );
+  }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -40, rotateZ: -8, scale: 0.9 }}
-      animate={{ opacity: 1, y: 0, rotateZ: 0, scale: 1 }}
-      transition={{ delay: index * 0.08, type: "spring", stiffness: 320, damping: 26 }}
-      className={`relative ${dims} shrink-0 playing-card-shadow select-none`}
+    <div
+      style={geometry}
+      className="deal-step playing-card-shadow flex shrink-0 select-none flex-col justify-between border-2 border-felt-950 bg-gold"
+      aria-label={`${card.rank} of ${card.suit}`}
     >
-      {faceDown || !card ? (
-        <div
-          className={`h-full w-full ${dims} overflow-hidden`}
-          style={{
-            background:
-              "repeating-linear-gradient(45deg, #7a1420 0 8px, #5c0f18 8px 16px)",
-            boxShadow: "inset 0 0 0 2px rgba(212,175,55,0.55), inset 0 0 0 6px #7a1420",
-          }}
-        >
-          <div className="flex h-full w-full items-center justify-center">
-            <span className="text-gold/70 text-2xl">♣</span>
-          </div>
-        </div>
-      ) : (
-        <div
-          className={`h-full w-full ${dims} bg-cream flex flex-col justify-between p-1.5`}
-          style={{ color: isRed ? "#c02434" : "#141414" }}
-        >
-          <div className="flex flex-col items-start leading-none font-semibold">
-            <span>{card.rank}</span>
-            <span className="text-xs">{symbol}</span>
-          </div>
-          <div className="self-center text-2xl sm:text-3xl leading-none">{symbol}</div>
-          <div className="flex flex-col items-end leading-none font-semibold rotate-180">
-            <span>{card.rank}</span>
-            <span className="text-xs">{symbol}</span>
-          </div>
-        </div>
-      )}
-    </motion.div>
+      <div className="flex items-center gap-[2px]">
+        <span className="font-bitmap" style={{ ...rankStyle, color }}>
+          {card.rank}
+        </span>
+        <Pip suit={card.suit} size={cornerPip} color={color} />
+      </div>
+
+      <div className="self-center">
+        <Pip suit={card.suit} size={centerPip} color={color} />
+      </div>
+
+      <div className="flex rotate-180 items-center gap-[2px]">
+        <span className="font-bitmap" style={{ ...rankStyle, color }}>
+          {card.rank}
+        </span>
+        <Pip suit={card.suit} size={cornerPip} color={color} />
+      </div>
+    </div>
   );
 }

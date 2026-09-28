@@ -73,7 +73,7 @@ export function QuizMode() {
         </div>
         <div className="glass rounded-xl px-3 py-1.5">
           <span className="text-cream/50">Streak</span>{" "}
-          <span className="font-bold text-gold-soft">{session.streak}🔥</span>
+          <span className="font-bitmap text-gold-soft tabular-nums">{session.streak}</span>
         </div>
         <div className="flex gap-2">
           <button
@@ -86,7 +86,7 @@ export function QuizMode() {
                 : "glass text-cream/80 hover:text-gold-soft"
             }`}
           >
-            🎯 Focus
+            Focus
           </button>
           <button
             onClick={() => setShowChart((v) => !v)}

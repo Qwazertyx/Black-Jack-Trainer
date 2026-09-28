@@ -43,11 +43,11 @@ export function computeAchievements(stats: Stats): Achievement[] {
   });
 
   return [
-    mk("first-hand", "🃏", "First Deal", "Play your first hand", stats.rounds, 1),
-    mk("fifty", "🎯", "Getting Warm", "Make 50 strategy decisions", stats.decisions, 50),
+    mk("first-hand", "1", "First Deal", "Play your first hand", stats.rounds, 1),
+    mk("fifty", "50", "Getting Warm", "Make 50 strategy decisions", stats.decisions, 50),
     mk(
       "sharp",
-      "⚡",
+      "20",
       "Sharp Shooter",
       "Hit a 20-decision streak",
       stats.bestStreak,
@@ -55,7 +55,7 @@ export function computeAchievements(stats: Stats): Achievement[] {
     ),
     mk(
       "accurate",
-      "📈",
+      "90%",
       "By The Book",
       "Reach 90% accuracy over 100+ decisions",
       stats.decisions >= 100 ? Math.round(acc * 100) : 0,
@@ -63,7 +63,7 @@ export function computeAchievements(stats: Stats): Achievement[] {
     ),
     mk(
       "flawless",
-      "💎",
+      "98%",
       "Flawless",
       "Reach 98% accuracy over 200+ decisions",
       stats.decisions >= 200 ? Math.round(acc * 100) : 0,
@@ -71,7 +71,7 @@ export function computeAchievements(stats: Stats): Achievement[] {
     ),
     mk(
       "master",
-      "🧠",
+      "40",
       "Chart Master",
       "Master 40 different situations",
       masteredCells(stats),
@@ -79,12 +79,12 @@ export function computeAchievements(stats: Stats): Achievement[] {
     ),
     mk(
       "profitable",
-      "💰",
+      "+100",
       "In The Black",
       "Finish up +100 units",
       Math.max(0, Math.floor(stats.netUnits)),
       100,
     ),
-    mk("century", "💯", "Centurion", "Play 100 rounds", stats.rounds, 100),
+    mk("century", "100", "Centurion", "Play 100 rounds", stats.rounds, 100),
   ];
 }

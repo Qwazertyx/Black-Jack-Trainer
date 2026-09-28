@@ -11,18 +11,23 @@ function sign(n: number): string {
 
 export function CountHud({ running, trueCount }: Props) {
   const tc = Math.round(trueCount);
+  // The true count is the one number that changes how you should bet, so it is
+  // the one number allowed to change colour.
   const tone =
-    tc >= 2 ? "text-emerald-400" : tc <= -2 ? "text-rose-400" : "text-cream/80";
+    tc >= 2 ? "text-verdigris" : tc <= -2 ? "text-carmine" : "text-cream";
+
   return (
-    <div className="glass flex items-center gap-3 rounded-xl px-3 py-1.5 text-xs">
-      <div className="flex flex-col items-center">
-        <span className="text-[10px] uppercase tracking-wide text-cream/50">Running</span>
-        <span className="font-mono text-sm font-bold text-cream">{sign(running)}</span>
+    <div className="glass flex items-center gap-2 px-2 py-1">
+      <div className="flex items-center gap-1">
+        <span className="label text-gold-dim">RC</span>
+        <span className="font-bitmap text-xs text-cream tabular-nums">
+          {sign(running)}
+        </span>
       </div>
-      <div className="h-6 w-px bg-gold/20" />
-      <div className="flex flex-col items-center">
-        <span className="text-[10px] uppercase tracking-wide text-cream/50">True</span>
-        <span className={`font-mono text-sm font-bold ${tone}`}>{sign(tc)}</span>
+      <div className="h-4 w-0.5 bg-felt-600" />
+      <div className="flex items-center gap-1">
+        <span className="label text-gold-dim">TC</span>
+        <span className={`font-bitmap text-xs tabular-nums ${tone}`}>{sign(tc)}</span>
       </div>
     </div>
   );

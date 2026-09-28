@@ -1,22 +1,37 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
 import { handValue } from "@/lib/blackjack/cards";
 import type { Hand, Outcome } from "@/lib/blackjack/types";
 import { PlayingCard } from "./PlayingCard";
 
+/** Outcomes are the one place colour is allowed to speak. */
 const OUTCOME_STYLE: Record<Outcome, { label: string; cls: string }> = {
-  blackjack: { label: "Blackjack!", cls: "bg-gold text-ink" },
-  win: { label: "Win", cls: "bg-emerald-500 text-ink" },
-  push: { label: "Push", cls: "bg-slate-400 text-ink" },
-  lose: { label: "Lose", cls: "bg-rose-600 text-white" },
-  surrender: { label: "Surrendered", cls: "bg-amber-700 text-white" },
+  blackjack: { label: "Blackjack", cls: "bg-gold text-ink" },
+  win: { label: "Win", cls: "bg-verdigris text-ink" },
+  push: { label: "Push", cls: "bg-felt-600 text-cream" },
+  lose: { label: "Lose", cls: "bg-carmine text-ink" },
+  surrender: { label: "Surrendered", cls: "bg-amber-700 text-gold" },
 };
 
 function totalLabel(cards: Hand["cards"]): string {
   const { total, soft } = handValue(cards);
   if (soft && total <= 21) return `${total - 10}/${total}`;
   return String(total);
+}
+
+/** Shared chip for a hand total: bitmap face, square, tabular. */
+function Total({ children, tone }: { children: React.ReactNode; tone?: "bust" }) {
+  return (
+    <span
+      className={`font-bitmap border-2 px-1.5 py-px text-[11px] tabular-nums ${
+        tone === "bust"
+          ? "border-carmine bg-carmine text-ink"
+          : "border-felt-600 bg-felt-950 text-cream"
+      }`}
+    >
+      {children}
+    </span>
+  );
 }
 
 interface Props {
@@ -29,65 +44,62 @@ export function HandView({ hand, active, showBet }: Props) {
   const busted = handValue(hand.cards).total > 21;
 
   return (
-    <motion.div
-      layout
-      className={`flex flex-col items-center gap-2 rounded-xl px-3 py-2 transition-colors ${
-        active ? "gold-ring pulse-gold bg-black/20" : ""
+    <div
+      // The active hand blinks its rule like a text cursor. No glow, no pulse.
+      className={`flex flex-col items-center gap-1.5 border-2 px-2 py-1.5 ${
+        active ? "pulse-gold bg-felt-950/40" : "border-transparent"
       }`}
     >
-      <div className="flex -space-x-6 sm:-space-x-5">
+      <div className="flex" style={{ gap: "var(--card-overlap)" }}>
         {hand.cards.map((c, i) => (
           <PlayingCard key={c.id} card={c} index={i} />
         ))}
       </div>
 
-      <div className="flex items-center gap-2">
-        <span
-          className={`rounded-md px-2 py-0.5 text-sm font-bold text-shadow-soft ${
-            busted ? "bg-rose-700 text-white" : "bg-black/40 text-cream gold-ring"
-          }`}
-        >
-          {totalLabel(hand.cards)}
-        </span>
+      <div className="flex items-center gap-1">
+        <Total tone={busted ? "bust" : undefined}>{totalLabel(hand.cards)}</Total>
         {hand.doubled && (
-          <span className="rounded-md bg-gold/20 px-1.5 py-0.5 text-xs text-gold-soft gold-ring">
-            2×
+          <span className="font-bitmap border-2 border-felt-600 px-1 py-px text-[10px] text-gold-soft">
+            2x
           </span>
         )}
         {showBet && (
-          <span className="rounded-md bg-black/30 px-1.5 py-0.5 text-xs text-cream/80">
+          <span className="font-bitmap border-2 border-felt-600 px-1 py-px text-[10px] text-cream tabular-nums">
             {hand.bet}u
           </span>
         )}
       </div>
 
-      <AnimatePresence>
-        {hand.outcome && (
-          <motion.span
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className={`rounded-full px-3 py-0.5 text-xs font-bold ${OUTCOME_STYLE[hand.outcome].cls}`}
-          >
-            {OUTCOME_STYLE[hand.outcome].label}
-          </motion.span>
-        )}
-      </AnimatePresence>
-    </motion.div>
+      {hand.outcome && (
+        <span
+          className={`font-bitmap px-2 py-px text-[10px] uppercase tracking-[0.08em] ${
+            OUTCOME_STYLE[hand.outcome].cls
+          }`}
+        >
+          {OUTCOME_STYLE[hand.outcome].label}
+        </span>
+      )}
+    </div>
   );
 }
 
 /** Dealer hand with an optional face-down hole card. */
-export function DealerHand({ cards, holeHidden }: { cards: Hand["cards"]; holeHidden: boolean }) {
-  const shownCards = cards;
+export function DealerHand({
+  cards,
+  holeHidden,
+}: {
+  cards: Hand["cards"];
+  holeHidden: boolean;
+}) {
   const visibleTotal = holeHidden
     ? handValue(cards.slice(0, 1)).total
     : handValue(cards).total;
   const soft = !holeHidden && handValue(cards).soft;
 
   return (
-    <div className="flex flex-col items-center gap-2">
-      <div className="flex -space-x-6 sm:-space-x-5">
-        {shownCards.map((c, i) => (
+    <div className="flex flex-col items-center gap-1.5">
+      <div className="flex" style={{ gap: "var(--card-overlap)" }}>
+        {cards.map((c, i) => (
           <PlayingCard
             key={c.id}
             card={c}
@@ -96,9 +108,13 @@ export function DealerHand({ cards, holeHidden }: { cards: Hand["cards"]; holeHi
           />
         ))}
       </div>
-      <span className="rounded-md bg-black/40 px-2 py-0.5 text-sm font-bold text-cream gold-ring">
-        {holeHidden ? `${visibleTotal} + ?` : soft && visibleTotal <= 21 ? `${visibleTotal - 10}/${visibleTotal}` : visibleTotal}
-      </span>
+      <Total>
+        {holeHidden
+          ? `${visibleTotal}+?`
+          : soft && visibleTotal <= 21
+            ? `${visibleTotal - 10}/${visibleTotal}`
+            : visibleTotal}
+      </Total>
     </div>
   );
 }

@@ -45,44 +45,57 @@ export function PlayTable() {
 
   useActionHotkeys(hotkeyHandlers, { onConfirm });
 
+  /*
+    A column sized to the space the shell gives it. Priority under pressure runs
+    top-down: the table keeps its automatic minimum (it can grow on a tall
+    screen but never shrink below the cards it holds), the buttons never move,
+    and the coach note is the one row that yields, shrinking and scrolling
+    inside itself. That is what keeps the table and the actions on the first
+    screen of a 360x640 phone.
+  */
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-4">
-      {/* Status bar */}
-      <div className="flex items-center justify-between gap-2">
-        <div className="glass rounded-xl px-3 py-1.5 text-sm">
-          <span className="text-cream/50">Bankroll</span>{" "}
-          <span className="font-bold text-gold-soft">{s.bankroll}u</span>
+    <div className="mx-auto flex h-full min-h-0 w-full max-w-3xl flex-col justify-center gap-2">
+      {/* Status */}
+      <div className="flex shrink-0 items-center justify-between gap-2">
+        <div className="glass px-2 py-1">
+          <span className="label text-gold-dim">Bank</span>{" "}
+          <span className="font-bitmap text-xs text-gold-soft tabular-nums">
+            {s.bankroll}u
+          </span>
         </div>
         {s.settings.showCount && (
           <CountHud running={s.runningCount} trueCount={trueCountValue(s)} />
         )}
-        <div className="glass rounded-xl px-3 py-1.5 text-sm">
-          <span className="text-cream/50">Accuracy</span>{" "}
-          <span className="font-bold text-emerald-400">
+        <div className="glass px-2 py-1">
+          <span className="label text-gold-dim">Acc</span>{" "}
+          <span className="font-bitmap text-xs text-verdigris tabular-nums">
             {s.stats.decisions ? `${Math.round(acc * 100)}%` : "—"}
           </span>
         </div>
       </div>
 
-      {/* Felt table */}
-      <div className="felt-inset relative flex min-h-[380px] flex-col items-center justify-between gap-4 rounded-[2rem] px-4 py-6">
-        {/* Dealer */}
+      {/* The table */}
+      <div
+        // No `overflow` here on purpose: an overflow container's automatic
+        // minimum size is 0, which is exactly what let the hand get clipped.
+        className={`felt-inset flex max-h-[440px] flex-1 flex-col items-center gap-2 px-3 py-2 sm:py-3 ${
+          s.hands.length > 0 ? "justify-between" : "justify-center"
+        }`}
+      >
         <div className="flex flex-col items-center gap-1">
-          <span className="text-xs uppercase tracking-[0.2em] text-gold/70">Dealer</span>
+          <span className="label text-gold-dim">Dealer</span>
           {s.dealer.length > 0 ? (
             <DealerHand cards={s.dealer} holeHidden={s.holeHidden} />
           ) : (
-            <div className="h-24" />
+            <div style={{ height: "var(--card-h)" }} />
           )}
         </div>
 
-        {/* Message */}
-        <div className="text-center text-sm font-medium text-cream/80 text-shadow-soft">
+        <div className="text-shadow-soft px-2 text-center text-xs text-cream sm:text-sm">
           {s.message}
         </div>
 
-        {/* Player hands */}
-        <div className="flex flex-wrap items-start justify-center gap-3">
+        <div className="flex flex-wrap items-start justify-center gap-2">
           {s.hands.length > 0 ? (
             s.hands.map((hand, i) => (
               <HandView
@@ -93,27 +106,33 @@ export function PlayTable() {
               />
             ))
           ) : (
-            <div className="text-cream/40">Ready when you are.</div>
+            <div
+              className="label flex items-center text-gold-dim"
+              style={{ height: "var(--card-h)" }}
+            >
+              Ready when you are
+            </div>
           )}
         </div>
       </div>
 
-      {/* Controls / betting */}
-      <div className="flex flex-col items-center gap-3">
+      {/* Actions */}
+      <div className="flex shrink-0 flex-col items-center gap-2">
         {s.phase === "player" ? (
           <Controls available={avail} onAct={s.act} hint={hint} />
         ) : (
-          <div className="flex flex-col items-center gap-3">
+          <div className="flex flex-col items-center gap-2">
             <div className="flex items-center gap-2">
-              <span className="text-sm text-cream/60">Bet</span>
+              <span className="label text-gold-dim">Bet</span>
               {CHIPS.map((chip) => (
                 <button
                   key={chip}
                   onClick={() => s.setBet(chip)}
-                  className={`h-11 w-11 rounded-full text-xs font-bold transition-transform hover:scale-105 ${
+                  aria-pressed={s.bet === chip}
+                  className={`font-bitmap h-11 w-11 border-2 text-[11px] tabular-nums ${
                     s.bet === chip
-                      ? "bg-gold text-ink ring-2 ring-gold-soft"
-                      : "bg-felt-700 text-cream gold-ring"
+                      ? "border-gold bg-gold text-ink"
+                      : "border-felt-600 bg-felt-800 text-cream hover:bg-felt-700"
                   }`}
                 >
                   {chip}
@@ -123,10 +142,10 @@ export function PlayTable() {
             <button
               onClick={s.phase === "over" ? s.nextRound : s.deal}
               disabled={!canDeal}
-              className={`rounded-xl px-8 py-3 text-base font-extrabold uppercase tracking-wide transition-all ${
+              className={`font-bitmap min-h-11 border-2 px-8 py-3 text-xs uppercase tracking-[0.08em] ${
                 canDeal
-                  ? "cursor-pointer bg-gradient-to-b from-gold-soft to-gold text-ink hover:-translate-y-0.5 shadow-[0_6px_20px_rgba(212,175,55,0.35)]"
-                  : "cursor-not-allowed bg-black/20 text-cream/30"
+                  ? "cursor-pointer border-gold bg-gold text-ink shadow-[4px_4px_0_var(--color-felt-950)] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none"
+                  : "cursor-not-allowed border-felt-700 bg-felt-900 text-gold-dim"
               }`}
             >
               {s.phase === "over" ? "Next Hand" : "Deal"}
@@ -134,7 +153,7 @@ export function PlayTable() {
             {!canDeal && s.bankroll <= 0 && (
               <button
                 onClick={s.resetBankroll}
-                className="text-xs text-gold-soft underline"
+                className="label text-cream underline underline-offset-2"
               >
                 Reset bankroll
               </button>
@@ -143,14 +162,19 @@ export function PlayTable() {
         )}
       </div>
 
-      {/* Coach feedback */}
-      {s.settings.coachMode && <FeedbackPanel feedback={s.feedback} />}
-
-      {/* Live hint text when hints are on */}
-      {s.settings.showHints && advice && s.phase === "player" && (
-        <div className="glass rounded-xl p-3 text-sm text-cream/85">
-          <span className="font-bold text-gold-soft">Book play: </span>
-          {advice.reason}
+      {/*
+        The coach. Capped so a long explanation can never push the buttons off a
+        phone screen: it scrolls inside its own box instead.
+      */}
+      {(s.settings.coachMode || (s.settings.showHints && advice && s.phase === "player")) && (
+        <div className="max-h-[18vh] min-h-0 flex-1 overflow-y-auto">
+          {s.settings.coachMode && <FeedbackPanel feedback={s.feedback} />}
+          {s.settings.showHints && advice && s.phase === "player" && (
+            <div className="glass mt-2 p-2 text-xs leading-relaxed text-cream">
+              <span className="label text-gold-soft">Book play </span>
+              {advice.reason}
+            </div>
+          )}
         </div>
       )}
     </div>

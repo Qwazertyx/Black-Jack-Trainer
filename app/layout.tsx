@@ -1,21 +1,42 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Jacquard_12, Silkscreen, IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+/** Display: a bitmap blackletter. The pixel grid and the engraved court card in one face. */
+const jacquard = Jacquard_12({
+  variable: "--font-jacquard",
+  weight: "400",
   subsets: ["latin"],
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+/** Interface: labels, ranks, totals, chart cells. */
+const silkscreen = Silkscreen({
+  variable: "--font-silkscreen",
+  weight: ["400", "700"],
   subsets: ["latin"],
+  display: "swap",
+});
+
+/** Reading: every sentence the coach speaks. A trainer that is hard to read has failed. */
+const plex = IBM_Plex_Sans({
+  variable: "--font-plex",
+  weight: ["400", "500", "600"],
+  subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
   title: "Vico Blackjack — Basic Strategy Trainer",
   description:
     "Practice blackjack and learn perfect basic strategy. Get the optimal 'by the book' play, live stats and Hi-Lo card counting drills.",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#171320",
+  // The table is sized to the viewport; zooming would break the one-screen fit.
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({
@@ -26,7 +47,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${jacquard.variable} ${silkscreen.variable} ${plex.variable} h-full antialiased`}
     >
       <body className="min-h-full">{children}</body>
     </html>

@@ -1,6 +1,5 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
 import type { DecisionFeedback } from "@/lib/store/useGame";
 
 const ACTION_LABEL: Record<string, string> = {
@@ -12,45 +11,43 @@ const ACTION_LABEL: Record<string, string> = {
 };
 
 export function FeedbackPanel({ feedback }: { feedback: DecisionFeedback | null }) {
+  if (!feedback) return null;
+
+  const ok = feedback.correct;
+
   return (
-    <AnimatePresence mode="wait">
-      {feedback && (
-        <motion.div
-          key={`${feedback.chosen}-${feedback.optimal}-${feedback.advice.reason.slice(0, 12)}`}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          className={`glass rounded-2xl p-4 ${
-            feedback.correct ? "border-emerald-400/40" : "border-rose-400/50"
-          }`}
-        >
-          <div className="mb-2 flex items-center gap-2">
-            <span
-              className={`rounded-full px-2.5 py-0.5 text-xs font-extrabold uppercase ${
-                feedback.correct ? "bg-emerald-500 text-ink" : "bg-rose-600 text-white"
-              }`}
-            >
-              {feedback.correct ? "Correct" : "Not optimal"}
-            </span>
-            <span className="text-sm text-cream/80">
-              You chose <b className="text-cream">{ACTION_LABEL[feedback.chosen]}</b>
-              {!feedback.correct && (
-                <>
-                  {" · "}Book play:{" "}
-                  <b className="text-gold-soft">{ACTION_LABEL[feedback.optimal]}</b>
-                </>
-              )}
-            </span>
-          </div>
+    // Verdict rail on the left, reasoning on the right. Colour states the result;
+    // nothing else on the panel is coloured.
+    <div
+      className={`grid grid-cols-1 border-2 sm:grid-cols-[auto_1fr] ${
+        ok ? "border-verdigris" : "border-carmine"
+      }`}
+    >
+      <div
+        className={`font-bitmap flex items-center px-2 py-2 text-[10px] uppercase tracking-[0.1em] ${
+          ok ? "bg-verdigris text-ink" : "bg-carmine text-ink"
+        }`}
+      >
+        {ok ? "Correct" : "Not optimal"}
+      </div>
 
-          <p className="text-sm leading-relaxed text-cream/90">{feedback.advice.reason}</p>
-
-          <div className="mt-2 flex items-start gap-2 rounded-lg bg-black/25 p-2">
-            <span className="text-gold">💡</span>
-            <p className="text-xs leading-relaxed text-gold-soft">{feedback.advice.tip}</p>
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+      <div className="bg-felt-800 px-3 py-2">
+        <p className="text-xs text-cream">
+          You chose <b className="text-gold-soft">{ACTION_LABEL[feedback.chosen]}</b>
+          {!ok && (
+            <>
+              {" · "}Book play:{" "}
+              <b className="text-gold-soft">{ACTION_LABEL[feedback.optimal]}</b>
+            </>
+          )}
+        </p>
+        <p className="mt-1 text-xs leading-relaxed text-cream">
+          {feedback.advice.reason}
+        </p>
+        <p className="mt-1.5 border-t-2 border-felt-600 pt-1.5 text-xs leading-relaxed text-gold-dim">
+          {feedback.advice.tip}
+        </p>
+      </div>
+    </div>
   );
 }

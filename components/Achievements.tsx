@@ -26,8 +26,11 @@ export function Achievements({ stats }: { stats: Stats }) {
               }`}
             >
               <span
-                className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg text-lg ${
-                  a.unlocked ? "bg-gold/25" : "bg-black/30 grayscale"
+                // The sigil states the target, so the icon carries information.
+                className={`font-bitmap grid h-9 w-11 shrink-0 place-items-center border-2 text-[10px] tabular-nums ${
+                  a.unlocked
+                    ? "border-gold bg-gold text-ink"
+                    : "border-felt-600 bg-felt-900 text-gold-dim"
                 }`}
               >
                 {a.icon}

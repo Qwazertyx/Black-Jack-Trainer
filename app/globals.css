@@ -1,24 +1,67 @@
 @import "tailwindcss";
 
+/*
+  Bitmap Salon
+  ------------
+  Scene: a card room after midnight, lit by one low lamp.
+
+  Two rules govern everything below:
+    1. The identity carries no colour. Emphasis is inversion (paper on ink).
+    2. Colour is reserved for meaning: carmine for red suits and mistakes,
+       verdigris for a correct play. Nothing decorative is coloured.
+
+  The Tailwind token *names* are unchanged (felt-*, gold, cream, ink) so the
+  whole app retunes from this one file; their values now describe the ink/paper
+  system rather than a green-and-gold casino.
+*/
+
 @theme {
-  --color-felt-950: #06180f;
-  --color-felt-900: #0a2417;
-  --color-felt-800: #0e3721;
-  --color-felt-700: #14512f;
-  --color-felt-600: #1c6b40;
+  /* Ink ramp: charcoal biased toward violet, never neutral grey, never #000. */
+  --color-felt-950: #171320; /* page ground */
+  --color-felt-900: #1d1728; /* table surface */
+  --color-felt-800: #241e32; /* raised panel */
+  --color-felt-700: #2f2742; /* raised panel, hover */
+  --color-felt-600: #443a5e; /* rules and borders */
 
-  --color-gold: #d4af37;
-  --color-gold-soft: #e9cd7a;
-  --color-gold-dim: #9a7d2a;
+  /* Paper: the only "accent". Inversion is how this design shouts. */
+  --color-gold: #efe8da; /* paper       (was the gold accent) */
+  --color-gold-soft: #f7f2e8; /* paper, bright */
+  --color-gold-dim: #7d7490; /* muted ink, for disabled */
 
-  --color-ink: #0b0f0d;
-  --color-cream: #f5f1e6;
+  --color-ink: #14101c; /* type on paper */
+  --color-cream: #d8d0c2; /* body copy on ink */
 
-  --font-display: var(--font-geist-sans);
+  /* Meaning. These are the only hues in the system. */
+  --color-carmine: #ce5068;
+  --color-verdigris: #59a987;
+
+  /* Tailwind's semantic palette, remapped so existing usages land in-system. */
+  --color-emerald-400: #6fbf9a;
+  --color-emerald-500: #59a987;
+  --color-rose-400: #de6f83;
+  --color-rose-600: #ce5068;
+  --color-rose-700: #b23a51;
+  --color-slate-400: #7d7490;
+  --color-amber-700: #8a6a3e;
+
+  /* Three faces, three jobs. Never a fourth. */
+  --font-display: var(--font-jacquard), "Papyrus", serif;
+  --font-bitmap: var(--font-silkscreen), ui-monospace, monospace;
+  --font-sans: var(--font-plex), system-ui, sans-serif;
+  --font-mono: var(--font-silkscreen), ui-monospace, monospace;
 }
 
 :root {
   color-scheme: dark;
+
+  /*
+    Card size is driven by the *shorter* of the two axes so a hand never pushes
+    the action buttons off a phone screen, and still reads comfortably on a
+    desktop. 1.4375 is the 64x92 card ratio.
+  */
+  --card-w: clamp(2.5rem, min(11vw, 7.2vh), 4.5rem);
+  --card-h: calc(var(--card-w) * 1.4375);
+  --card-overlap: calc(var(--card-w) * -0.3);
 }
 
 html,
@@ -28,59 +71,132 @@ body {
 
 body {
   color: var(--color-cream);
-  background:
-    radial-gradient(120% 90% at 50% -10%, #1c6b40 0%, #0e3721 38%, #06180f 100%),
-    #06180f;
-  background-attachment: fixed;
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  background-color: var(--color-felt-950);
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none;
 }
 
-/* Reusable surface styles */
+/*
+  Law 1: nothing is round.
+  Unlayered, so it wins over Tailwind's `rounded-*` utilities (which live in
+  @layer utilities) without a single !important.
+*/
+*,
+*::before,
+*::after {
+  border-radius: 0;
+}
+
+/* Law 2: no blur exists. Depth is a hard offset shadow in the ground colour. */
 .glass {
-  background: rgba(9, 26, 18, 0.62);
-  border: 1px solid rgba(212, 175, 55, 0.18);
-  backdrop-filter: blur(10px);
+  background: var(--color-felt-800);
+  border: 2px solid var(--color-felt-600);
+}
+
+.panel {
+  background: var(--color-felt-800);
+  border: 2px solid var(--color-felt-600);
+  box-shadow: 4px 4px 0 var(--color-felt-950);
 }
 
 .gold-ring {
-  border: 1px solid rgba(212, 175, 55, 0.35);
+  border: 2px solid var(--color-felt-600);
 }
 
+/* The table: flat ink plus a 2px ordered dither at ~3% contrast. */
 .felt-inset {
-  background:
-    radial-gradient(90% 70% at 50% 30%, #1c6b40 0%, #124a2b 55%, #0b301c 100%);
-  box-shadow:
-    inset 0 2px 40px rgba(0, 0, 0, 0.45),
-    inset 0 0 0 2px rgba(212, 175, 55, 0.12);
+  background-color: var(--color-felt-900);
+  background-image: repeating-conic-gradient(
+    rgba(239, 232, 218, 0.028) 0% 25%,
+    transparent 0% 50%
+  );
+  background-size: 4px 4px;
+  border: 2px solid var(--color-felt-600);
+  box-shadow: 4px 4px 0 var(--color-felt-950);
 }
 
 .text-shadow-soft {
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  text-shadow: 2px 2px 0 rgba(15, 12, 22, 0.55);
 }
 
 .playing-card-shadow {
-  box-shadow:
-    0 8px 20px rgba(0, 0, 0, 0.45),
-    0 2px 4px rgba(0, 0, 0, 0.3);
+  box-shadow: 3px 3px 0 rgba(15, 12, 22, 0.55);
 }
 
-/* Thin custom scrollbar */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(212, 175, 55, 0.3) transparent;
+/* Bitmap sprites must never be smoothed. */
+.pixelated {
+  image-rendering: pixelated;
 }
 
-@keyframes pulse-gold {
+/* Small caps labels in the bitmap face. */
+.label {
+  font-family: var(--font-bitmap);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/*
+  Law 5: motion steps, it never eases.
+  The active hand is marked by a border that blinks between two states, the way
+  a text cursor does. No glow, no pulse, no scale.
+*/
+@keyframes blink-rule {
   0%,
-  100% {
-    box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.4);
+  49% {
+    border-color: var(--color-gold);
   }
-  50% {
-    box-shadow: 0 0 0 6px rgba(212, 175, 55, 0);
+  50%,
+  100% {
+    border-color: var(--color-felt-600);
   }
 }
 
 .pulse-gold {
-  animation: pulse-gold 1.8s ease-in-out infinite;
+  animation: blink-rule 1.2s steps(1, end) infinite;
+}
+
+/* Cards land in four discrete frames. */
+@keyframes deal-step {
+  from {
+    transform: translateY(-1.5rem);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.deal-step {
+  animation: deal-step 200ms steps(4, end) both;
+}
+
+/* Square scrollbar, paper on ink. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-felt-600) transparent;
+}
+
+::selection {
+  background: var(--color-gold);
+  color: var(--color-ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .deal-step,
+  .pulse-gold {
+    animation: none;
+  }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+  }
 }

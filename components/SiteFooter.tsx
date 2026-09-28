@@ -4,7 +4,11 @@ import { useState } from "react";
 
 type Section = "gambling" | "privacy" | null;
 
-export function SiteFooter() {
+/**
+ * Always rendered. On the play screen `compact` shrinks the bar to a single
+ * line so the legal notice stays present without costing the table any height.
+ */
+export function SiteFooter({ compact = false }: { compact?: boolean }) {
   const [open, setOpen] = useState<Section>(null);
 
   function toggle(s: Section) {
@@ -12,7 +16,7 @@ export function SiteFooter() {
   }
 
   return (
-    <footer className="border-t border-gold/10 bg-felt-950/60 text-xs text-cream/50">
+    <footer className="shrink-0 border-t-2 border-felt-600 bg-felt-900 text-xs text-gold-dim">
       {/* Expandable sections */}
       {open === "gambling" && (
         <div className="mx-auto max-w-5xl border-b border-gold/10 px-4 py-5 text-cream/70">
@@ -122,7 +126,8 @@ export function SiteFooter() {
           </ul>
           <p className="mb-2">
             <strong className="text-cream">Third-party fonts:</strong> This
-            site loads the Geist font family from Google Fonts. Google&apos;s
+            site loads the Jacquard 12, Silkscreen and IBM Plex Sans typefaces
+            from Google Fonts. Google&apos;s
             servers may log your IP address as part of that request. If you
             prefer, you can block external fonts via your browser or network
             settings.
@@ -137,10 +142,20 @@ export function SiteFooter() {
       )}
 
       {/* Footer bar */}
-      <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-4">
+      <div
+        className={`mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-x-4 gap-y-1 px-4 ${
+          compact ? "py-1.5 text-[10px]" : "py-4"
+        }`}
+      >
         <span>
-          &copy; {new Date().getFullYear()} Vico Blackjack &mdash; Educational
-          use only. No real money. Not affiliated with any casino.
+          {compact ? (
+            "Educational use only. No real money."
+          ) : (
+            <>
+              &copy; {new Date().getFullYear()}{" "}Vico Blackjack &mdash; Educational
+              use only. No real money. Not affiliated with any casino.
+            </>
+          )}
         </span>
         <div className="flex gap-4">
           <button
